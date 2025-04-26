@@ -1,0 +1,69 @@
+services:
+  # Serviço de API
+  - type: web
+    name: pdv-2028-api
+    env: node
+    plan: free
+    buildCommand: rm -f yarn.lock && npm ci
+    startCommand: npm start
+    repo: https://github.com/jesusmjunior/pdv-2028.git
+    branch: main
+    buildFilter:
+      paths:
+        - api/**
+        - package.json
+        - package-lock.json
+        - .env
+        - .npmrc
+    healthCheckPath: /api/system/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        fromDatabase:
+          name: pdv-2028-db
+          property: host
+      - key: DB_USER
+        fromDatabase:
+          name: pdv-2028-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pdv-2028-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: pdv-2028-db
+          property: database
+      - key: DB_PORT
+        fromDatabase:
+          name: pdv-2028-db
+          property: port
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 3000
+
+  # Serviço de Site Estático
+  - type: web
+    name: pdv-2028
+    env: static
+    buildCommand: cp -r src/* .
+    staticPublishPath: ./
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /pages/index.html
+    buildFilter:
+      paths:
+        - src/**
+    envVars:
+      - key: API_URL
+        value: https://pdv-2028-api.onrender.com
+        
+databases:
+  # Banco de dados PostgreSQL
+  - name: pdv-2028-db
+    plan: free
+    databaseName: pdv_2028
+    user: pdv_app
